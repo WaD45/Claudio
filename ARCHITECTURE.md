@@ -446,5 +446,4 @@ Il est conçu pour être :
 - Une **base de TP** pour les formateurs
 
 **Version :** 1.0  
-**Date :** Novembre 2024  
-**Équipe :** Ascent Formation
+**Date :** Novembre 2025
