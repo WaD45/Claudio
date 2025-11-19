@@ -471,4 +471,4 @@ Chaque groupe présente :
 
 **Version :** 1.0  
 **Dernière mise à jour :** Novembre 2024  
-**Contact :** formation@ascent.com
+**Contact :** github!
