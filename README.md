@@ -391,11 +391,10 @@ Chaque service a des vulnérabilités de différents niveaux, permettant un appr
 ## 🤝 Support
 
 Pour toute question sur ce lab de formation :
-- Formation Ascent : formation@ascent.com
-- Documentation : docs.ascent-formation.com
+- contactez-moi!
 
 ---
 
 **Version :** 1.0  
 **Dernière mise à jour :** Novembre 2024  
-**Auteur :** Équipe Pédagogique Ascent Formation
+**Auteur :** Barry & Claude
