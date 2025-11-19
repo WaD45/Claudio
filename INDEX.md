@@ -316,16 +316,12 @@ pentest-lab/
 
 ---
 
-## 📞 Contact
 
-Pour toute question sur ce lab :
-- **Email** : formation@ascent.com
-- **Documentation** : docs.ascent-formation.com
 
 ---
 
 **Version :** 1.0  
-**Dernière mise à jour :** Novembre 2024  
-**Équipe :** Ascent Formation
+**Dernière mise à jour :** Novembre 2025  
+
 
 **Bon apprentissage ! 🚀**
