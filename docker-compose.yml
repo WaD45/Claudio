@@ -1,0 +1,231 @@
+version: '3.8'
+
+# Lab de Pentesting Progressif - Ascent Formation
+# Architecture réaliste d'une petite entreprise avec multiples vulnérabilités
+# Difficulté: Débutant à Intermédiaire
+
+networks:
+  # Réseau DMZ - Services exposés à Internet
+  dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  
+  # Réseau Interne - Services backend
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+services:
+  # ============================================
+  # DMZ - Applications Web Exposées
+  # ============================================
+  
+  # Application Web Moderne (Node.js + API REST)
+  brokencrystals:
+    image: neuralegion/brokencrystals:latest
+    container_name: lab-brokencrystals
+    networks:
+      dmz:
+        ipv4_address: 172.20.0.10
+      internal:
+    ports:
+      - "8080:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://dbuser:weak_password@postgres-db:5432/webapp
+    depends_on:
+      - postgres-db
+    restart: unless-stopped
+    labels:
+      - "lab.level=1"
+      - "lab.vulns=SQLi,XSS,JWT,GraphQL,SSRF,XXE"
+      - "lab.difficulty=beginner"
+
+  # Application Web Classique (PHP)
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    container_name: lab-dvwa
+    networks:
+      dmz:
+        ipv4_address: 172.20.0.11
+      internal:
+    ports:
+      - "8081:80"
+    environment:
+      - MYSQL_HOST=mysql-db
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USER=dvwa
+      - MYSQL_PASSWORD=dvwa123
+    depends_on:
+      - mysql-db
+    restart: unless-stopped
+    labels:
+      - "lab.level=1"
+      - "lab.vulns=SQLi,XSS,CSRF,FileUpload,CommandInjection"
+      - "lab.difficulty=beginner"
+
+  # Serveur Web avec Fichiers Sensibles
+  nginx-misconfig:
+    image: nginx:alpine
+    container_name: lab-webserver
+    networks:
+      dmz:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "8082:80"
+    volumes:
+      - ./nginx-data/html:/usr/share/nginx/html:ro
+      - ./nginx-data/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-data/secrets:/var/www/secrets:ro
+    restart: unless-stopped
+    labels:
+      - "lab.level=1"
+      - "lab.vulns=DirectoryListing,SensitiveFiles,InfoDisclosure"
+      - "lab.difficulty=beginner"
+
+  # ============================================
+  # Réseau Interne - Services Backend
+  # ============================================
+
+  # Base de données PostgreSQL (accessible depuis DMZ)
+  postgres-db:
+    image: postgres:14-alpine
+    container_name: lab-postgres
+    networks:
+      internal:
+        ipv4_address: 172.21.0.20
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=webapp
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=weak_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    labels:
+      - "lab.level=2"
+      - "lab.vulns=WeakCredentials,DefaultConfig,DataExfiltration"
+      - "lab.difficulty=intermediate"
+
+  # Base de données MySQL
+  mysql-db:
+    image: mysql:5.7
+    container_name: lab-mysql
+    networks:
+      internal:
+        ipv4_address: 172.21.0.21
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USER=dvwa
+      - MYSQL_PASSWORD=dvwa123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    labels:
+      - "lab.level=2"
+      - "lab.vulns=WeakCredentials,DefaultConfig"
+      - "lab.difficulty=intermediate"
+
+  # Serveur FTP Vulnérable
+  ftp-server:
+    image: fauria/vsftpd
+    container_name: lab-ftp
+    networks:
+      internal:
+        ipv4_address: 172.21.0.30
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      - FTP_USER=ftpuser
+      - FTP_PASS=ftp123
+      - PASV_ADDRESS=127.0.0.1
+      - PASV_MIN_PORT=21000
+      - PASV_MAX_PORT=21010
+    volumes:
+      - ./ftp-data:/home/vsftpd
+    restart: unless-stopped
+    labels:
+      - "lab.level=2"
+      - "lab.vulns=WeakCredentials,AnonymousAccess,SensitiveDataExposure"
+      - "lab.difficulty=beginner"
+
+  # Serveur SSH avec Config Faible
+  ssh-server:
+    image: linuxserver/openssh-server:latest
+    container_name: lab-ssh
+    networks:
+      internal:
+        ipv4_address: 172.21.0.31
+    ports:
+      - "2222:2222"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=admin123
+      - USER_NAME=admin
+    volumes:
+      - ./ssh-data:/config
+    restart: unless-stopped
+    labels:
+      - "lab.level=2"
+      - "lab.vulns=WeakCredentials,BruteForce,PrivilegeEscalation"
+      - "lab.difficulty=intermediate"
+
+  # Service Redis non sécurisé
+  redis-server:
+    image: redis:alpine
+    container_name: lab-redis
+    networks:
+      internal:
+        ipv4_address: 172.21.0.40
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123 --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    labels:
+      - "lab.level=3"
+      - "lab.vulns=WeakAuth,CacheExploitation,SessionHijacking"
+      - "lab.difficulty=intermediate"
+
+  # Application Interne (Admin Panel)
+  admin-panel:
+    image: vulnerables/web-dvwa:latest
+    container_name: lab-admin
+    networks:
+      internal:
+        ipv4_address: 172.21.0.50
+    ports:
+      - "8083:80"
+    environment:
+      - MYSQL_HOST=mysql-db
+      - MYSQL_DATABASE=admin_db
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin_p@ss
+    depends_on:
+      - mysql-db
+    restart: unless-stopped
+    labels:
+      - "lab.level=3"
+      - "lab.vulns=IDOR,PrivilegeEscalation,SSRF,LFI"
+      - "lab.difficulty=intermediate"
+
+volumes:
+  postgres-data:
+  mysql-data:
+  redis-data:
