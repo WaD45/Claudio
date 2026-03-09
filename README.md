@@ -1,4 +1,4 @@
-# Lab de Pentesting Progressif - Ascent Formation
+# Lab de Pentesting Progressif -  Formation
 
 ## 🎯 Objectif
 
